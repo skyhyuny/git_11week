@@ -30,7 +30,39 @@ print(X_train.shape, X_test.shape)
 
 ####### A 작업자 작업 수행 #######
 
-''' 코드 작성 바랍니다 '''
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import f1_score, accuracy_score
+
+dt_params = {
+    'criterion': ['gini', 'entropy'],
+    'max_depth': [5, 10],
+    'min_samples_leaf': [1, 5, 20],
+}
+
+dt_grid = GridSearchCV(DecisionTreeClassifier(random_state=42),
+                       param_grid=dt_params, cv=5, scoring='f1', n_jobs=-1)
+dt_grid.fit(X_train, y_train)
+
+print('[DecisionTree] 최적 하이퍼파라미터 :', dt_grid.best_params_)
+print('[DecisionTree] CV F1 (best)      :', round(dt_grid.best_score_, 4))
+
+dt_best = dt_grid.best_estimator_
+dt_pred = dt_best.predict(X_test)
+dt_f1 = f1_score(y_test, dt_pred)
+dt_acc = accuracy_score(y_test, dt_pred)
+print('[DecisionTree] Test F1       :', round(dt_f1, 4))
+print('[DecisionTree] Test Accuracy :', round(dt_acc, 4))
+
+# Feature Importance 상위 10개 시각화
+dt_imp = pd.Series(dt_best.feature_importances_, index=X_train.columns)
+dt_top10 = dt_imp.sort_values(ascending=False).head(10)
+
+plt.figure(figsize=(8, 5))
+dt_top10.sort_values().plot(kind='barh')
+plt.title('DecisionTree Feature Importance (Top 10)')
+plt.xlabel('importance')
+plt.tight_layout()
+plt.show()
 
 
 ####### B 작업자 작업 수행 #######
