@@ -67,4 +67,35 @@ plt.show()
 
 ####### B 작업자 작업 수행 #######
 
-''' 코드 작성 바랍니다 '''
+from xgboost import XGBClassifier
+
+xgb_params = {
+    'max_depth': [3, 6, 9],
+    'n_estimators': [100, 300],
+    'learning_rate': [0.1, 0.05],
+}
+
+xgb_grid = GridSearchCV(XGBClassifier(random_state=42, eval_metric='logloss'),
+                        param_grid=xgb_params, cv=5, scoring='f1', n_jobs=-1)
+xgb_grid.fit(X_train.astype(float), y_train)
+
+print('[XGBoost] 최적 하이퍼파라미터 :', xgb_grid.best_params_)
+print('[XGBoost] CV F1 (best)      :', round(xgb_grid.best_score_, 4))
+
+xgb_best = xgb_grid.best_estimator_
+xgb_pred = xgb_best.predict(X_test.astype(float))
+xgb_f1 = f1_score(y_test, xgb_pred)
+xgb_acc = accuracy_score(y_test, xgb_pred)
+print('[XGBoost] Test F1       :', round(xgb_f1, 4))
+print('[XGBoost] Test Accuracy :', round(xgb_acc, 4))
+
+# Feature Importance 상위 10개 시각화
+xgb_imp = pd.Series(xgb_best.feature_importances_, index=X_train.columns)
+xgb_top10 = xgb_imp.sort_values(ascending=False).head(10)
+
+plt.figure(figsize=(8, 5))
+xgb_top10.sort_values().plot(kind='barh')
+plt.title('XGBoost Feature Importance (Top 10)')
+plt.xlabel('importance')
+plt.tight_layout()
+plt.show()
